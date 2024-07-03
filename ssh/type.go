@@ -1,5 +1,12 @@
 package ssh
 
+import (
+	"os"
+	"path/filepath"
+
+	"k8s.io/klog/v2"
+)
+
 type SshConfig struct {
 	Encrypted bool   `mapstructure:"encrypted" yaml:"encrypted,omitempty" json:"encrypted,omitempty"`
 	User      string `mapstructure:"user" yaml:"user,omitempty" json:"user,omitempty"`
@@ -22,39 +29,61 @@ type SshHosts struct {
 type Option func(*SshConfig)
 
 // NewSSH initializes and returns an SSH instance with required and optional parameters.
-func NewSSHConfig(user, passwd string, options ...Option) SshConfig {
+func NewSSHConfig(options ...Option) SshConfig {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		klog.Errorf("Failed to get home directory: %v", err)
+	}
+	keyPath := filepath.Join(homeDir, ".ssh", "id_rsa")
 	ssh := SshConfig{
-		User:   user,
-		Passwd: passwd,
-		Port:   "22", // Default port
+		User: "root", // Default user
+		Port: "22",   // Default port
+		Pk:   keyPath,
 	}
 
 	for _, option := range options {
 		option(&ssh)
 	}
-
+	klog.Infof("NewSSHConfig: %+v", ssh)
 	return ssh
 }
 
-// Option functions for SSH
+// Option functions for SSH,config user
+func WithUser(user string) Option {
+	return func(ssh *SshConfig) {
+		ssh.User = user
+	}
+}
+
+// Option functions for SSH,config user's password
+func WithPasswd(passwd string) Option {
+	return func(ssh *SshConfig) {
+		ssh.Passwd = passwd
+	}
+}
+
+// Option functions for SSH,config encrypted
 func WithEncrypted(encrypted bool) Option {
 	return func(ssh *SshConfig) {
 		ssh.Encrypted = encrypted
 	}
 }
 
+// Option functions for SSH,config private key
 func WithPrivateKey(pk string) Option {
 	return func(ssh *SshConfig) {
 		ssh.Pk = pk
 	}
 }
 
+// Option functions for SSH,config password of the private key
 func WithPrivateKeyPassword(pkPasswd string) Option {
 	return func(ssh *SshConfig) {
 		ssh.PkPasswd = pkPasswd
 	}
 }
 
+// Option functions for SSH,config port
 func WithPort(port string) Option {
 	return func(ssh *SshConfig) {
 		ssh.Port = port

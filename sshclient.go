@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// 配置用户名与密码
-	sshconfig := ssh.NewSSHConfig("root", "MyPassword")
+	sshconfig := ssh.NewSSHConfig(ssh.WithUser("root"), ssh.WithPasswd("MyPassword"))
 
 	// 使用 NewHost 初始化 Host，配置ip与密码对应关系
 	host1 := ssh.NewHost([]string{"10.42.186.32", "10.42.186.33"}, sshconfig)
@@ -18,7 +18,7 @@ func main() {
 	sshHosts := ssh.NewSshHosts(host1)
 
 	// 获取指定ip的sshclient
-	ip0 := net.ParseIP("10.42.186.33") // 将ip地址转换成net.IP
+	ip0 := net.ParseIP("10.42.186.32") // 将ip地址转换成net.IP
 	sshClient0, err := ssh.GetHostSSHClient(ip0, &sshHosts)
 	if err != nil {
 		panic(err)
